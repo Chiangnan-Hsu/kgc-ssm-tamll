@@ -22,7 +22,7 @@ public class PageController {
     }
     @RequestMapping("loginPage")
     public String loginPage() {
-        return "fore/login";
+        return "/fore/login";
     }
     @RequestMapping("forealipay")
     public String alipay(){
