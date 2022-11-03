@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       https://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/mvc
+       https://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <!--配置自动扫描-->
+    <context:component-scan base-package="com.how2java.tmall"/>
+    <context:component-scan base-package="comparator"/>
+    <!--开启spring注解驱动-->
+    <mvc:annotation-driven/>
+
+    <!--启动视图解析器-->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <!--prefix 代表前缀
+            suffix 代表后缀
+            如果控制器（controller）中的方法返回是String类型
+            或者返回值是ModelAndView类型，那么springMVC会做特殊处理
+            1. String类型，跟根据你返回字符串，自动添加如下规则
+                http://ip:port/项目名/ prefix对应的value的值 / String字符串 /suffix对应的value的值
+                举例：如果返回值是 hello
+                http://ip：port/项目名/WEB-INF/hello.jsp
+            2. ModelAndView类型，这个类有一个方法setViewName（视图名称）
+               当我们设置视图名称的时候，会和String的规则一致，
+               拼出一个访问视图的地址
+        -->
+        <property name="prefix" value="/WEB-INF/jsp/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+    <!--使用springmvc 默认的静态资源处理规则-->
+    <mvc:default-servlet-handler/>
+
+    <!--开启aop自动代理-->
+    <aop:aspectj-autoproxy/>
+
+    <!--配置druid数据访问连接池-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/tmall_ssm?serverTimezone=Asia/Shanghai&amp;characterEncoding=utf-8&amp;useUnicode=true"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123456"/>
+    </bean>
+
+
+    <!--配置mybatis的SQLsession factory bean-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!--配置管理数据源-->
+        <property name="dataSource" ref="dataSource"/>
+        <!--配置mapper文件的位置-->
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+        <!--配置别名-->
+        <property name="typeAliasesPackage" value="com.how2java.tmall.pojo"/>
+        <!--其他配置-->
+        <property name="configuration" ref="configuration"/>
+        <!--分页插件-->
+        <property name="plugins">
+            <array>
+                <bean class="com.github.pagehelper.PageInterceptor">
+                    <!--可选配置-->
+                    <property name="properties">
+                        <props>
+                            <!--配置方言-->
+                            <prop key="helperDialect">mysql</prop>
+                            <!--查询页码大于最大页码时返回最后一页数据-->
+                            <prop key="reasonable">true</prop>
+                            <!-- 设置为true时，如果pageSize=0或者RowBounds.limit = 0就会查询出全部的结果 -->
+                            <prop key="pageSizeZero">false</prop>
+                        </props>
+                    </property>
+                </bean>
+            </array>
+        </property>
+    </bean>
+
+
+    <bean id="configuration" class="org.apache.ibatis.session.Configuration">
+        <!-- 开启下划线转驼峰
+            会自动将user_name_id的数据库字段转化为userNameId形式的java字符串
+            use_rname -> useRname
+        -->
+        <property name="mapUnderscoreToCamelCase" value="true" />
+        <!--开启自动打印sql-->
+        <property name="logImpl" value="org.apache.ibatis.logging.stdout.StdOutImpl"/>
+    </bean>
+
+    <!--
+    MapperScannerConfigurer是spring自动管理mybatis数据访问接口的一个配置类
+    主要是将mapper接口和.xml文件中的sql语句关联起来
+    -->
+    <bean id="mapperScannerConfigurer"
+          class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.how2java.tmall.mapper"/>
+    </bean>
+
+    <!--开启注解式事务管理-->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    <!-- 对上传文件的解析-->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/fore*"/>
+            <bean class="com.how2java.tmall.interceptor.LoginInterceptor"/>
+        </mvc:interceptor>
+        <mvc:interceptor>
+            <mvc:mapping path="/fore*"/>
+            <bean class="com.how2java.tmall.interceptor.OtherInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+</beans>
