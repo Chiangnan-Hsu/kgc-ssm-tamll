@@ -85,7 +85,7 @@ public class CategoryController {
             BufferedImage img = ImageUtil.change2jpg(file);
             ImageIO.write(img, "jpg", file);
         }
-        return "/redirect:/admin_category_list";
+        return "redirect:/admin_category_list";
     }
 
 }
