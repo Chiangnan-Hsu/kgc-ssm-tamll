@@ -66,7 +66,7 @@ public class ForeController {
             model.addAttribute("msg", m);
 
 
-            return "fore/register";
+            return "/fore/register";
         }
         userService.add(user);
 
